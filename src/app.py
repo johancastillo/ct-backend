@@ -7,86 +7,115 @@ from flask_marshmallow import Marshmallow
 app = Flask(__name__)
 
 # Config Data Base
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://jcjohan:password@localhost/flask_api_rest'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://jcjohan:password@localhost/compralotodo'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
 # Model
-class Task(db.Model):
+class Product(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     title = db.Column(db.String(70), unique = True)
     description = db.Column(db.String(100))
+    price = db.Column(db.Float)
 
-    def __init__(self, title, description):
+
+    def __init__(self, title, description, price):
         self.title = title
         self.description = description
+        self.price = price
 
 db.create_all()
 
 # Schema
-class TaskSchema(ma.Schema):
+class ProductSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'title', 'description')
+        fields = ('id', 'title', 'description', 'price')
 
-task_schema = TaskSchema()
-tasks_schema = TaskSchema(many = True)
+product_schema = ProductSchema()
+products_schema = ProductSchema(many = True)
 
-# Routes
+# ***** Routes *****
+
+# Root route
 @app.route('/', methods = ['GET'])
 def index():
     return jsonify({ 'message': 'Welcome to my API REST' })
 
 
-@app.route('/tasks', methods = ['POST'])
-def create_task():
+# CREATE product
+@app.route('/products', methods = ['POST'])
+def create_product():
     title = request.json['title']
     description = request.json['description']
+    price = request.json['price']
 
-    new_task = Task(title, description)
-    db.session.add(new_task)
+    new_product = Product(title, description, price)
+    
+    db.session.add(new_product)
     db.session.commit()
 
-    return task_schema.jsonify(new_task)
+    response = product_schema.jsonify(new_product) 
+    response.headers.add('Access-Control-Allow-Origin', '*')
 
-@app.route('/tasks', methods = ['GET'])
-def get_task():
-    all_tasks = Task.query.all()
-    results = tasks_schema.dump(all_tasks)
+    return response
+
+# READ products
+@app.route('/products', methods = ['GET'])
+def get_products():
+    all_products = Product.query.all()
+    results = products_schema.dump(all_products)
+
+    response = jsonify(results)
+    response.headers.add('Access-Control-Allow-Origin', '*')
 
     # String to JSON
-    return jsonify(results)
+    return response
 
-@app.route('/tasks/<id>', methods = ['GET'])
-def filter_task(id):
-    task = Task.query.get(id)
+# Single product
+@app.route('/products/<id>', methods = ['GET'])
+def filter_product(id):
+    product = Product.query.get(id)
 
-    return task_schema.jsonify(task)
+    response = product_schema.jsonify(product)
+    response.headers.add('Access-Control-Allow-Origin', '*')
 
-@app.route('/tasks/<id>', methods = ['PUT'])
-def update_task(id):
-    task = Task.query.get(id)
+    return response
+
+
+# UPDATE product
+@app.route('/products/<id>', methods = ['PUT'])
+def update_product(id):
+    product = Product.query.get(id)
 
     title = request.json['title']
     description = request.json['description']
+    price = request.json['price']
 
-    task.title = title
-    task.description = description
+    product.title = title
+    product.description = description
+    product.price = price
 
     db.session.commit()
 
-    return task_schema.jsonify(task)
+    response = product_schema.jsonify(product)
+    response.headers.add('Access-Control-Allow-Origin', '*')
 
-@app.route('/tasks/<id>', methods = ['DELETE'])
-def delete_task(id):
-    task = Task.query.get(id)
-    db.session.delete(task)
+    return response
+
+# DELETE
+@app.route('/products/<id>', methods = ['DELETE'])
+def delete_product(id):
+    product = Product.query.get(id)
+    db.session.delete(product)
     db.session.commit()
 
-    return  task_schema.jsonify(task)
+    response = product_schema.jsonify(product)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+    return  response
 
 # Run Server
 if __name__ == "__main__":
     app.run(host = '0.0.0.0', port = 4000, debug = True)
-
