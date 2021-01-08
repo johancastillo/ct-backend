@@ -4,9 +4,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 
+
+
 # Instance of Flask
 app = Flask(__name__)
 
+# CORS
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Config Data Base
@@ -47,6 +50,7 @@ def index():
     return jsonify({ 'message': 'Welcome to my API REST' })
 
 
+# ***** Products endpoints *****
 # CREATE product
 @app.route('/api/products', methods = ['POST'])
 def create_product():
@@ -59,7 +63,7 @@ def create_product():
     db.session.add(new_product)
     db.session.commit()
 
-    response = product_schema.jsonify(new_product) 
+    response = product_schema.jsonify(new_product)
 
     return response
 
@@ -113,6 +117,7 @@ def delete_product(id):
     response = product_schema.jsonify(product)
 
     return  response
+
 
 # Run Server
 if __name__ == "__main__":
